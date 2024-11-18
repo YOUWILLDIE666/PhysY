@@ -3,11 +3,12 @@
 #include <string>
 #include <map>
 
-class Color {
+class Color
+{
 public:
     Color(int code, const std::string& escapeSequence) : code(code), escapeSequence(escapeSequence) {}
 
-    int getCode() const { return code; }
+    constexpr int getCode() const { return code; }
     const std::string& getEscapeSequence() const { return escapeSequence; }
 
 private:
@@ -15,10 +16,11 @@ private:
     std::string escapeSequence;
 };
 
-class ColorManager {
+class ColorManager
+{
 public:
-    static void LoadColors(std::string filename);
-    static Color getColor(int code);
+    const static void LoadColors(const std::string& filename);
+    const static Color getColor(int code);
 
 private:
     static std::map<int, Color> colors;
