@@ -5,9 +5,7 @@
 #include <thread>
 #include <chrono>
 #include <conio.h>
-#include <windows.h>
 #include <mutex>
-#include <sstream>
 
 bool aaa = false;
 
@@ -23,9 +21,9 @@ std::mutex output_mutex;
 
 int curIter = 0;
 
-static void clearConsole()
+static void cls()
 {
-    std::cout << "\x1B[2J\x1B[H"; // ANSI escape codes to clear the console
+    std::cout << "\x1B[2J\x1B[H";
 }
 
 static std::string debuginfo(double xmin, double xmax, double ymin, double ymax)
@@ -124,7 +122,7 @@ int main()
         aaa = true;
         ColorManager::LoadColors(filename.value());
     }
-    clearConsole();
+    cls();
 
     double xmin = -2.5;
     double xmax = 0.5;
@@ -184,7 +182,7 @@ int main()
         default:
             break;
         }
-        clearConsole();
+        cls();
 
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
