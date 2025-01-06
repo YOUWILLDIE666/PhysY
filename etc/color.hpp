@@ -6,10 +6,10 @@
 class Color
 {
 public:
-    Color(int code, const std::string& escapeSequence) : code(code), escapeSequence(escapeSequence) {}
+    Color(int code, std::string escapeSequence) : code(code), escapeSequence(escapeSequence) {}
 
     constexpr int getCode() const { return code; }
-    const std::string& getEscapeSequence() const { return escapeSequence; }
+    std::string getEscapeSequence() const { return escapeSequence; }
 
 private:
     int code;
@@ -19,7 +19,7 @@ private:
 class ColorManager
 {
 public:
-    const static void LoadColors(const std::string& filename);
+    const static void LoadColors(std::string_view filename);
     const static Color getColor(int code);
 
 private:

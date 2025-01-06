@@ -1,7 +1,7 @@
 ﻿#include <color.hpp>
 #include <iostream>
+#include <Windows.h>
 #include <complex>
-#include <vector>
 #include <thread>
 #include <chrono>
 #include <conio.h>
@@ -12,9 +12,9 @@ bool aaa = false;
 constexpr int WIDTH = 120;
 constexpr int HEIGHT = 40;
 
-enum class ColorCode
+enum class ColorCode : std::uint8_t
 {
-    BLACK = 40,
+    BLACK = 40
 };
 
 std::mutex output_mutex;
@@ -37,9 +37,9 @@ static void draw(const double xmin, const double xmax, const double ymin, const 
 {
     std::vector<std::string> output(HEIGHT);
 
-    auto drawRow = [&](int y)
+    auto drawRow = [&](int y) -> void
     {
-        std::string& row = output[y];
+        std::string row = output[y];
         for (int x = 0; x < WIDTH; ++x)
         {
             double real = xmin + (xmax - xmin) * x / WIDTH;
@@ -72,6 +72,7 @@ static void draw(const double xmin, const double xmax, const double ymin, const 
             }
         }
         row += "\x1B[0m\n"; // reset
+        output[y] = row; // i am gay
     };
 
     std::vector<std::thread> threads;
@@ -79,17 +80,17 @@ static void draw(const double xmin, const double xmax, const double ymin, const 
     {
         threads.emplace_back(drawRow, y);
     }
-    for (auto& thread : threads)
+    for (std::thread& thread : threads)
     {
         thread.join();
     }
 
     HWND hWnd = GetConsoleWindow();
     std::string debugInfoStr = debuginfo(xmin, xmax, ymin, ymax); // Call debuginfo once
-    std::wstring title = L"PhysY 0.4.0 (" + std::wstring(debugInfoStr.begin(), debugInfoStr.end()) + L")"; // Use the stored result
+    std::wstring title = L"PhysY 0.4.1 (" + std::wstring(debugInfoStr.begin(), debugInfoStr.end()) + L")"; // Use the stored result
     SetWindowTextW(hWnd, title.c_str());
 
-    for (const auto& row : output)
+    for (const std::string& row : output)
     {
         std::cout << row;
     }
@@ -115,12 +116,13 @@ int main()
     SetConsoleMode(hConsole, dwMode);
 #endif
 
-    std::cout << "If you have custom color mapping, enter its path right here (skip otherwise): ";
+    std::cout << "If you have a .cm file, enter its path right here (skip otherwise): ";
     std::optional<std::string> filename = input(std::cin);
     if (filename.has_value() && !filename.value().empty())
     {
         aaa = true;
-        ColorManager::LoadColors(filename.value());
+        std::string& val = filename.value();
+        ColorManager::LoadColors(val);
     }
     cls();
 
@@ -134,12 +136,13 @@ int main()
     double mul = 1.0;
 
     auto start = std::chrono::high_resolution_clock::now();
-    while (true)
+    while ( 1 )
     {
         draw(xmin, xmax, ymin, ymax, maxIter);
 
         int command = _getch();
-        switch (command) {
+        switch ( command )
+        {
         case '+':
         case '=':
             xmin = (xmin + xmax) / 2 - (xmax - xmin) / div;
@@ -185,7 +188,7 @@ int main()
         cls();
 
         auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::int64_t duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         start = end;
         std::this_thread::sleep_for(std::chrono::milliseconds(16 - duration)); // 16ms = 60fps
     }

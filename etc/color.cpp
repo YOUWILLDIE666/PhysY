@@ -17,7 +17,7 @@ const std::unordered_set<std::string_view> supportedExtensions = {
     "cm", "cmap"
 };
 
-void checkForbidden(const std::string_view name)
+void checkForbidden(std::string_view name)
 {
     if (forbidden.find(name) != forbidden.end())
     {
@@ -25,9 +25,9 @@ void checkForbidden(const std::string_view name)
     }
 }
 
-const void ColorManager::LoadColors(const std::string& filename)
+const void ColorManager::LoadColors(std::string_view filename)
 {
-    std::string filenameUpper = filename;
+    std::string filenameUpper = std::string(filename);
     std::transform(filenameUpper.begin(), filenameUpper.end(), filenameUpper.begin(), ::toupper);
 
     size_t pos = 0;
@@ -52,17 +52,20 @@ const void ColorManager::LoadColors(const std::string& filename)
 
     checkForbidden(filenameUpper);
 
-    std::ifstream file(filename);
+    std::ifstream file(static_cast<std::string>(filename));
     if (!file)
     {
         throw std::runtime_error("Color map file not found");
     }
 
     std::string line;
-    if (!std::getline(file, line) || line != "Define custom color mapping 1.0;")
+/*    if (!std::getline(file, line) || line != "Define custom color mapping 1.0;")
     {
         throw std::runtime_error("Invalid file format");
     }
+    
+    yeah no me no likes >:3
+    */
 
     while (std::getline(file, line))
     {
@@ -88,6 +91,7 @@ const Color ColorManager::getColor(int code)
     {
         return it->second;
     }
+
     std::cerr << "Unknown color " << code << std::endl;
     return Color(0, ""); // default color
 }
