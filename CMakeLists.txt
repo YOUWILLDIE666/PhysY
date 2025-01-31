@@ -1,10 +1,10 @@
 ﻿cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project("PhysY" VERSION 0.4.0 LANGUAGES CXX)
+project("PhysY" VERSION 0.5.0 LANGUAGES CXX)
 
 add_executable(${PROJECT_NAME} "PhysY.cpp" "etc/color.cpp")
 include_directories("etc")
 
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED YES)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS NO)
 

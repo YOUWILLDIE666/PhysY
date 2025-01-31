@@ -1,5 +1,5 @@
 ﻿#include <color.hpp>
-#include <iostream>
+#include <parser.hpp>
 #include <Windows.h>
 #include <complex>
 #include <thread>
@@ -33,14 +33,15 @@ static std::string debuginfo(double xmin, double xmax, double ymin, double ymax)
     return ss.str();
 }
 
-static void draw(const double xmin, const double xmax, const double ymin, const double ymax, const int maxIter)
+static void draw(const double xmin, const double xmax, const double ymin, const double ymax, const int maxIter, std::string_view expression)
 {
     std::vector<std::string> output(HEIGHT);
+    std::vector<std::thread> threads;
 
     auto drawRow = [&](int y) -> void
     {
-        std::string row = output[y];
-        for (int x = 0; x < WIDTH; ++x)
+        std::string& row = output[y];
+        for ( int x = 0; x < WIDTH; ++x )
         {
             double real = xmin + (xmax - xmin) * x / WIDTH;
             double imag = ymin + (ymax - ymin) * y / HEIGHT;
@@ -48,9 +49,23 @@ static void draw(const double xmin, const double xmax, const double ymin, const 
             std::complex<double> z(0, 0);
             int iter = 0;
 
-            while (std::abs(z) < 2 && iter < maxIter)
+            Interpreter interpreter({});
+            interpreter.assign("c", c.real());  // Assign the real part of c
+            interpreter.assign("ci", c.imag()); // Assign the imaginary part of c
+
+            while ( std::abs(z) < 2 && iter < maxIter )
             {
-                z = z * z + c;
+                interpreter.assign("z", z.real());
+                interpreter.assign("zi", z.imag());
+
+                double z_real = z.real();
+                double z_imag = z.imag();
+                
+                /*z = std::complex<double>(z_real * z_real - z_imag * z_imag, 
+                             2 * z_real * z_imag) + c;*/
+
+                z = interpreter.eval();
+
                 ++iter;
             }
 
@@ -72,14 +87,22 @@ static void draw(const double xmin, const double xmax, const double ymin, const 
             }
         }
         row += "\x1B[0m\n"; // reset
-        output[y] = row; // i am gay
+//        std::lock_guard<std::mutex> lock(output_mutex);
+//        output[y] = row;
     };
 
-    std::vector<std::thread> threads;
-    for (int y = 0; y < HEIGHT; ++y)
+    const int numThreads = std::thread::hardware_concurrency();
+    for ( int i = 0; i < numThreads; ++i )
     {
-        threads.emplace_back(drawRow, y);
+        threads.emplace_back([&, i]()
+        {
+            for ( int y = i; y < HEIGHT; y += numThreads )
+            {
+                drawRow(y);
+            }
+        });
     }
+
     for (std::thread& thread : threads)
     {
         thread.join();
@@ -87,10 +110,10 @@ static void draw(const double xmin, const double xmax, const double ymin, const 
 
     HWND hWnd = GetConsoleWindow();
     std::string debugInfoStr = debuginfo(xmin, xmax, ymin, ymax); // Call debuginfo once
-    std::wstring title = L"PhysY 0.4.1 (" + std::wstring(debugInfoStr.begin(), debugInfoStr.end()) + L")"; // Use the stored result
+    std::wstring title = L"PhysY 0.5.0 (" + std::wstring(debugInfoStr.begin(), debugInfoStr.end()) + L")"; // Use the stored result
     SetWindowTextW(hWnd, title.c_str());
 
-    for (const std::string& row : output)
+    for (std::string_view row : output)
     {
         std::cout << row;
     }
@@ -135,13 +158,17 @@ int main()
     int div = 4;
     double mul = 1.0;
 
+    std::cout << "Enter a mathematical expression for the fractal (e.g., 'z^2 + c'): ";
+    std::string expression;
+    std::getline(std::cin, expression);
+
     auto start = std::chrono::high_resolution_clock::now();
-    while ( 1 )
+    while (true)
     {
-        draw(xmin, xmax, ymin, ymax, maxIter);
+        draw(xmin, xmax, ymin, ymax, maxIter, expression);
 
         int command = _getch();
-        switch ( command )
+        switch (command)
         {
         case '+':
         case '=':
@@ -185,6 +212,7 @@ int main()
         default:
             break;
         }
+
         cls();
 
         auto end = std::chrono::high_resolution_clock::now();
